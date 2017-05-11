@@ -1,0 +1,249 @@
+1.format
+	1.1 format采用{}作为占位符，采用0,1....代表参数的位置，如果不写数字，则默认依次匹配
+		a='hello'
+		b='world'
+		temp = '* {0} + {1}'.format(a,b)
+		print temp
+		result:
+			* hello + world
+		temp = '* {0} + {0}'.format(a,b)
+		print temp
+		result:
+			* hello + hello
+		temp = '* {} + {}'.format(a,b)
+		print temp
+		result:
+			* hello + world
+	1.2 如果是一个可迭代类型，则使用0代表第一个参数，0[1]代表第一个参数的第一个元素，1代表第二个参数，1[0]代表第二个参数的第一个元素
+		my_container=('hello','word')
+		my_container2=('data','ming')
+		temp = '*{0[0]} + {1[1]} *'.format(my_container,my_container2)
+		print temp
+		result:
+			*hello + ming *
+	1.3 如果需要控制每个参数的输出格式，则用冒号标识
+		保留两位小数
+		a=0.33333333
+		print '{0:.2f}'.format(a)
+		result:
+			0.33
+		指定输出进制
+		a = 24
+		b = 16
+		print '{0:o} {1:b}'.format(a,b)
+		result:
+			30 10000
+	1.4 填充与对齐
+		^、<、>分别表示居中，左对齐，右对齐
+		:后面第一个字符是填充字符，不写默认为空格，
+		a = 24
+		print '{0:a<8}'.format(a)
+		result:
+			24aaaaaa
+			
+		print '{0:8}'.format(a)
+		result:
+				24
+		千分位符','
+		a=123456
+		print '{0:,}'.format(a)
+		
+		result:
+			123,456
+2. 函数装饰器
+	2.1.装饰器的作用
+		装饰器可以使得函数在不需要做任何代码变动的前提下，增加额外的功能。经常用于有切面需求的场景，比如插入日志，函数执行前的参数校验等。可以抽离大量与函数本身无关的雷同代码并重复利用。
+	2.2.装饰器的实现原理
+		2.1 闭包
+			闭包就是将函数和函数的执行的环境打包在一起。闭包的作用就是封存函数执行的上下文环境。闭包应用在嵌套函数上就形成了装饰器。正常情况下，函数返回后，函数内部的局部变量就消失了，
+			闭包使得内层函数封存了外层函数的变量，使得可以在外层函数返回后仍能访问函数内部的局部变量，实现机制就是，内层函数中使用到了外层函数的局部变量，然后外层函数的返回值是该内嵌
+			函数，在全局命名空间内调用外层函数时，返回这个个内嵌函数，然后在全局命名空间单独调用这个返回的内嵌函数时，原来外层函数的局部变量仍可以使用，如果这个局部变量是一个函数，
+			则可以实现内嵌函数对这个函数功能的扩展。
+		2.2 函数可以当做参数，可以内嵌，可以当做返回值
+			python中函数满足以上特性，才可以使得装饰器得以实现。
+	2.3.装饰器例子
+		def outer(some_func):
+			def inner():
+				ret = some_func()
+				return ret+1
+			return inner
+		def foo():
+			return 1
+		decorated = outer(foo)
+		decorated()
+		
+		
+		
+		结果:2
+		
+		
+		解析:在上面这个例子中inner内层函数用到了outer外层函数的some_func局部变量，这个变量是一个函数指针，所以inner函数在被返回时封存了some_func这个变量，即全局命名空间里的decorated
+		所以在调用decorated时，some_func是默认可以使用的，这就相当于decorated在不调用foo和不把foo当做参数传入的情况下。对foo进行了扩展。所以说Python的装饰器实现一定要有内嵌函数
+		如果把decorated变量名改为foo,即foo = outer(foo)，则新的foo完全取代了原来的foo,实现了不需要修改之后的任何代码，新增功能的情形，如果使用Python语法糖可以省略每次都赋一次值
+		即在def foo(),上面加一行@outer，表示默认将@outer下面一行的函数当做参数传给@后面的函数。
+	2.4.完整装饰器模板
+		上面的例子中，inner应该和foo的参数一样，但是foo函数的参数形式可能有很多形式，可能导致inner参数无法统一满足，幸亏python提供了模糊参数处理方法*args和**kwargs
+		所以装饰器的通用模板如下:
+			def wrapper(func):
+				def inner(*args,**kwargs):
+					''''''''
+					预处理语句
+					'''''''
+					ret = func(*args,**kwargs)
+					'''''''
+					对函数放回结果处理
+					''''''''''''
+					return 返回值
+				return inner
+			def func(任何形式参数):
+				函数体
+			
+3. 时间处理
+	python 中处理时间主要有两个模块，分别是time和datetime
+	3.1 time模块
+		time模块类似于c语言里的time.h,只是为了和C语言兼容，主要是返回时间戳，即到目前为止的秒数，其中time.time()返回当前时间戳，time.ctime()将时间戳转换为可读模式。
+	3.2 datetime模块
+	
+		datetime模块是python专有的时间处理模块,该模块下面有三种类型的对象，分别是date,time,和datetime,其中datetime是date和time的结合体
+		所以引用datetime模块经常写成from datetime import *而不写成import datetime,因为我们需要引用datetime模块里不同对象的不同方法，引用时要加上对象名如datetim.weekday(),date.weekday()
+		其中datetime对象使用最为方便，因为datetime同时支持两个函数strftime(format,datetime_struct)和strptime(datetime_struct,format)
+		这两个函数分别实现时间对象转换为字符串，字符串转换为时间对象，而date和time两个模块仅支持strftime，即时间对象转换为字符串，
+		其中format可以自己定义如'%Y-%m-%d'或者'%Y/%m/%d %H:%m%s'
+		datetime对象常用的数据成员有year,month,day,hour,minute,second，直接引用即可，例如d.hour
+		datetime对象常用方法有weekdays()对象对应的星期几,date()截取日期,time()截取时间
+4.跳过第一行读取文件
+	with open('E:\data15\\sd_member_info_excel.txt','rb') as f:
+    for i,line in enumerate(f):
+        if i:
+            print line
+5.生成器和迭代器
+	5.1迭代器
+		可迭代对象和迭代器对象
+		list,dict,set等集合类型都是可迭代对象，他们实现了__iter__,但他们都不是迭代器对象，可以调用iter()方法得到他们对应的迭代器对象，迭代器对象的标志是可以调用next方法,可迭代对象是
+		不能调用的。for 循环调用时默认生成他们的迭代器对象，让后默认每次调用他们的迭代器对象的next()方法。
+		class Zrange:
+			def __init__(self,n):
+				self.idx=0
+				self.n=n
+			def __iter__(self):
+				return self
+			def next(self):
+				if self.idx < self.n:
+					val = self.idx
+					self.idx += 1
+					return val
+				else:
+					raise StopIteration()
+			myrange = Zrange(3)
+			for i in myrange:
+				print i
+			结果:
+			0
+			1
+			2
+			isinstance(myrange,Iterator)
+			结果:True
+            
+	5.2 生成器
+		生成器是用函数方式实现了的迭代器(生成器内部复写了__iter__和next.当然这个迭代器满足5.1所说迭代器特性，但还有其他自己独有的特性，可以说迭生成器包含并实现了迭代器，但又不仅仅是迭代器，即生成器继承了迭代器(自己理解的))是一种功能更加丰富的迭代器对象。普通迭代器实现需要覆写__iter__和__next__。而生成器，它使用生成器函数实现了迭代协议，有两种实现方式1.生成器函数，2生成器表达式。他们都返回一个
+		生成器对象(特殊迭代器对象)，这个生成器是可以迭代的。生成器(特殊迭代器对象)的特点是惰性求值。生成器函数依靠yield完成实现迭代协议和状态保存。所以生成器函数。一般是多次执行yield函数，所以最普遍的生成器函
+		数里是一个for循环，调用生成器函数后的返回的不是一个数值而是一个生成器对象(迭代器对象)，所以可以对这个生成器对象迭代遍历，相当于每次调用它的next方法。每次调用这个生成器对象的next方法会使生
+		成器函数运行到yield所在处。yield是自动实现可迭代协议而且是实现了状态机。可以保存上次运行到yield的状态，等到本次运行时，先回复上次的环境，在继续执行，有点类似于主函数调用子函数时压栈和进程阻塞挂起
+			def gensquares(N):
+				for i in range(N):
+					yield i**2
+
+			g = gensquares(5)
+
+			for i in g:
+				print i
+			
+			结果:
+			 0 1 4 6 16
+			isinstance((g,Iterator)
+			结果:
+				True
+		
+			解析：其中gensquares即为生成器函数，主程序调用gensquares后返回一个生成器对象，赋值给变量g。g也是一个迭代器对象。所以可以使用for循环对他进行迭代。
+			列表推到返回的是一个可迭代对象，而不是一个迭代器对象，生成器推导返回的是一个生成器对象(迭代器对象)。所以可以惰性求值。即惰性求值是迭代器就有的特性。生成器和迭代器的区别就是
+			生成器使用函数实现了迭代协议，而不是复写的__iter__和__next__.使用函数得到迭代器对象更加方便所以专门衍生出来了生成器。
+			
+			def Zrange(n):
+				print "beginning of Zrange"
+				i = 0
+				while i < n:
+					print "before yield",i
+					yield i
+					i += 1
+					print "after yield",i
+				print "ending of Zrange"
+				
+			zrange = Zrange(3)
+			print '_________________'
+
+			print zrange.next()
+			print '_________________'
+
+			print zrange.next()
+			print '_________________'
+
+			print zrange.next()
+			print '_________________'
+
+			print zrange.next()
+			print '_________________'
+			
+			
+			
+			_________________
+			beginning of Zrange
+			before yield 0
+			0
+			_________________
+			after yield 1
+			before yield 1
+			1
+			_________________
+			after yield 2
+			before yield 2
+			2
+			_________________
+			after yield 3
+			ending of Zrange
+			---------------------------------------------------------------------------
+			StopIteration                             Traceback (most recent call last)
+			<ipython-input-113-528f6e3db71a> in <module>()
+				 11 print '_________________'
+				 12 
+			---> 13 print zrange.next()
+				 14 print '_________________'
+
+			StopIteration: 
+			
+			解析，有程序可知zrange = Zrange(3)之后生成器函数仅返回一个生成器对象(迭代器对象)。函数并未执行。当首次调用next()是，函数开始从第一句执行，到第一次碰到yield语句停止。
+			这是yield保存住此时的上下文环境。当第二次调用next()时，函数恢复上次的上下文环境并从yield的下一句开始继续执行，直到再次循环碰到yield.循环往复直到循环结束
+			
+6 上下文管理器
+	上下文管理器需要复写__enter__，和__exit__,具体例子见下所示
+	class Connection_Oracle:
+		def __init__(self,db_conf):
+			self.db_conf = db_conf
+			self.conn = None
+		def __enter__(self):
+			try:
+				self.conn = cx_Oracle.connect(self.db_conf)
+				if self.conn:
+					return self.conn.cursor()
+			except Exception, e:
+				raise Exception('Connect the database Failed ! ')
+
+
+		def __exit__(self, exc_type, exc_val, exc_tb):
+			self.conn.commit()
+			self.conn.close()
+			
+			
+	使用如下:
+	  with Connection_Oracle('nbpf_4/nbpf_4@172.16.1.62:1521/ora11g') as cursor:
+	  
+	
