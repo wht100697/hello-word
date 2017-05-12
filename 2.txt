@@ -1,2 +1,2 @@
 local add
-local add2
+myfinal add
