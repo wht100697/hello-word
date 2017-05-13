@@ -1,5 +1,6 @@
 ﻿hello
 local master add 18:21 2017/5/13
+local master add 18:26 2017/5/13
 every on
 java
 remote master add
